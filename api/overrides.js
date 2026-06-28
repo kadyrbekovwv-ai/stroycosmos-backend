@@ -1,5 +1,6 @@
-const { kv } = require('@vercel/kv');
+const { Redis } = require('@upstash/redis');
 
+const redis = Redis.fromEnv();
 const PASS = 'Stroycosmos2026';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -8,15 +9,12 @@ const CORS = {
 };
 
 module.exports = async (req, res) => {
-  if (req.method === 'OPTIONS') {
-    Object.entries(CORS).forEach(([k,v]) => res.setHeader(k,v));
-    return res.status(200).end();
-  }
   Object.entries(CORS).forEach(([k,v]) => res.setHeader(k,v));
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method === 'GET') {
     try {
-      const data = await kv.get('overrides') || {};
+      const data = await redis.get('overrides') || {};
       return res.status(200).json(data);
     } catch(e) {
       return res.status(200).json({});
@@ -28,7 +26,7 @@ module.exports = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     try {
-      await kv.set('overrides', req.body.overrides);
+      await redis.set('overrides', req.body.overrides);
       return res.status(200).json({ ok: true });
     } catch(e) {
       return res.status(500).json({ error: e.message });
